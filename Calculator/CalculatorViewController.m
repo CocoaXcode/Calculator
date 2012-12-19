@@ -22,7 +22,6 @@
 @implementation CalculatorViewController
 
 @synthesize display = _display;
-@synthesize input = _input;
 @synthesize description = _description;
 @synthesize variable = _variable;
 @synthesize userIsInTheMiddleOfEnteringANumber = _userIsInTheMiddleOfEnteringANumber;
@@ -40,7 +39,6 @@
 - (void)viewDidUnload
 {
     [self setDisplay:nil];
-    [self setInput:nil];
     [self setDescription:nil];
     [self setVariable:nil];
     [super viewDidUnload];
@@ -88,22 +86,14 @@
         [self enterPressed];
     }
     double result = [self.brain performOperation:sender.currentTitle];
-    //first erase the equal sign at the end of input text, then add operation with equal sign
-    //that keeps only one equal sign at the end of input text
-    self.input.text = [self.input.text stringByReplacingOccurrencesOfString:@"=" withString:@""];
-    self.input.text = [self.input.text stringByAppendingFormat:@"%@ =", sender.currentTitle];
     self.display.text = [NSString stringWithFormat:@"%g", result];
-    self.description.text = [self.brain performDescription];
+    self.description.text = [CalculatorBrain descriptionOfProgram:self.brain.program];
 }
 
 - (IBAction)enterPressed 
 {
     [self.brain pushOperand:[self.display.text doubleValue]];
-    //when enter key pressed, erase the equal sign at the end of input text
-    //so that user can distinguish what is input and what is result
-    self.input.text = [self.input.text stringByReplacingOccurrencesOfString:@"=" withString:@""];
-    self.input.text = [self.input.text stringByAppendingFormat:@"%@ ", self.display.text];
-    self.description.text = [self.brain performDescription];
+    self.description.text = [CalculatorBrain descriptionOfProgram:self.brain.program];
     self.userIsInTheMiddleOfEnteringANumber = NO;
     self.pointIsInTheMiddleOfANumber = NO;
 }
@@ -114,9 +104,9 @@
         return;
     }
     
-    //point pressed while displaying the result
+    //Point pressed while displaying the result
     //whole display text will be cleared and start off with "0."
-    //it is a little tricky, but fully reasonable
+    //It is a little tricky, but fully reasonable
     if (self.userIsInTheMiddleOfEnteringANumber) {
         self.display.text = [self.display.text stringByAppendingString:@"."];
     } else {
@@ -131,38 +121,11 @@
 {
     [self.brain clearStack];
     self.display.text = @"0";
-    self.input.text = @"";
     self.description.text = @"";
     self.variable.text = @"";
     self.userIsInTheMiddleOfEnteringANumber = NO;
     self.pointIsInTheMiddleOfANumber = NO;
     [self.testVariableValues removeAllObjects];
-}
-
-- (IBAction)backspacePressed 
-{
-    //backspace pressed while displaying the result
-    //whole display text will be cleared and start off with "0"
-    //it is a little tricky, but fully reasonable
-    if (!self.userIsInTheMiddleOfEnteringANumber) {
-        self.display.text = @"0";
-        return;
-    }
-    
-    NSUInteger lengthOfDisplayText = self.display.text.length;
-    if (lengthOfDisplayText > 1) {
-        //if last char of display text BEFORE substring equals to '.', then do something 
-        unichar lastCharOfDisplayText = [self.display.text characterAtIndex: (lengthOfDisplayText - 1)];
-        if (lastCharOfDisplayText == '.') {
-            self.pointIsInTheMiddleOfANumber = NO;
-        }
-        
-        //perform substring
-        self.display.text = [self.display.text substringToIndex: (lengthOfDisplayText - 1)];
-    } else {
-        self.display.text = @"0";
-        self.userIsInTheMiddleOfEnteringANumber = NO;
-    }
 }
 
 - (IBAction)changeSignPressed:(UIButton *)sender 
@@ -206,6 +169,31 @@
     self.display.text = [NSString stringWithFormat:@"%g", [CalculatorBrain runProgram:self.brain.program usingVariableValues:[self.testVariableValues copy]]];
     
     self.variable.text = variableDescription;
+}
+
+- (IBAction)undoPressed:(UIButton *)sender 
+{
+    if (self.userIsInTheMiddleOfEnteringANumber) {
+        NSUInteger lengthOfDisplayText = self.display.text.length;
+        if (lengthOfDisplayText > 1) {
+            //If last char of display text BEFORE substring equals to '.', then do something 
+            unichar lastCharOfDisplayText = [self.display.text characterAtIndex: (lengthOfDisplayText - 1)];
+            if (lastCharOfDisplayText == '.') {
+                self.pointIsInTheMiddleOfANumber = NO;
+            }
+            
+            //Perform substring
+            self.display.text = [self.display.text substringToIndex: (lengthOfDisplayText - 1)];
+        } else {
+            self.display.text = [NSString stringWithFormat:@"%g", [CalculatorBrain runProgram:self.brain.program usingVariableValues:[self.testVariableValues copy]]];
+            self.userIsInTheMiddleOfEnteringANumber = NO;
+        }
+    } else {
+        
+        [self.brain popTopOfStack];
+        self.display.text = [NSString stringWithFormat:@"%g", [CalculatorBrain runProgram:self.brain.program usingVariableValues:[self.testVariableValues copy]]];
+        self.description.text = [CalculatorBrain descriptionOfProgram:self.brain.program];
+    }
 }
 
 @end

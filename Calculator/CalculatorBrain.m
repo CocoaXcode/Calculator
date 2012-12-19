@@ -53,9 +53,13 @@
     [self.programStack removeAllObjects];
 }
 
-- (NSString *)performDescription
+- (id)popTopOfStack
 {
-    return [CalculatorBrain descriptionOfProgram:self.program];
+    id topOfStack = [self.programStack lastObject];
+    if (topOfStack) {
+        [self.programStack removeLastObject];
+    }
+    return topOfStack;
 }
 
 #pragma mark Class Methods
@@ -271,6 +275,11 @@
     NSMutableArray *stack;
     NSString *result;
     if ([program isKindOfClass:[NSArray class]]) {
+        //If no item in stack, return nil
+        if ([program count] == 0) {
+            return nil;
+        }
+        
         stack = [program mutableCopy];
         //Do description
         result = [self descriptionOfTopOfStack:stack withPreviousOperation:nil];
