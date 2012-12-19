@@ -14,6 +14,7 @@
 @property (nonatomic) BOOL userIsInTheMiddleOfEnteringANumber;
 @property (nonatomic) BOOL pointIsInTheMiddleOfANumber;
 @property (strong, nonatomic) CalculatorBrain *brain;
+@property (strong, nonatomic) NSMutableDictionary *testVariableValues;
 
 @end
 
@@ -23,10 +24,13 @@
 @synthesize display = _display;
 @synthesize input = _input;
 @synthesize description = _description;
+@synthesize variable = _variable;
 @synthesize userIsInTheMiddleOfEnteringANumber = _userIsInTheMiddleOfEnteringANumber;
 @synthesize pointIsInTheMiddleOfANumber = _pointIsInTheMiddleOfANumber;
 @synthesize brain = _brain;
+@synthesize testVariableValues = _testVariableValues;
 
+#pragma mark View Related
 - (void)viewDidLoad
 {
     [super viewDidLoad];
@@ -38,6 +42,7 @@
     [self setDisplay:nil];
     [self setInput:nil];
     [self setDescription:nil];
+    [self setVariable:nil];
     [super viewDidUnload];
     // Release any retained subviews of the main view.
 }
@@ -47,6 +52,7 @@
     return (interfaceOrientation != UIInterfaceOrientationPortraitUpsideDown);
 }
 
+#pragma mark Accessors
 - (CalculatorBrain *)brain
 {
     if (!_brain) {
@@ -55,6 +61,15 @@
     return _brain;
 }
 
+- (NSMutableDictionary *)testVariableValues
+{
+    if (!_testVariableValues) {
+        _testVariableValues = [[NSMutableDictionary alloc] init];
+    }
+    return _testVariableValues;
+}
+
+#pragma mark Press Action
 - (IBAction)digitPressed:(UIButton *)sender 
 {
     NSString *digit = sender.currentTitle;
@@ -118,8 +133,10 @@
     self.display.text = @"0";
     self.input.text = @"";
     self.description.text = @"";
+    self.variable.text = @"";
     self.userIsInTheMiddleOfEnteringANumber = NO;
     self.pointIsInTheMiddleOfANumber = NO;
+    [self.testVariableValues removeAllObjects];
 }
 
 - (IBAction)backspacePressed 
@@ -160,7 +177,35 @@
 
 - (IBAction)testPressed:(UIButton *)sender 
 {
-    self.description.text = [self.brain performDescription];
+    [self.testVariableValues removeAllObjects];
+    
+    if ([sender.currentTitle isEqualToString:@"Test1"]) {
+        [self.testVariableValues setValue:[NSNumber numberWithDouble:19] forKey:@"z"];
+    } else if ([sender.currentTitle isEqualToString:@"Test2"]) {
+        [self.testVariableValues setValue:[NSNumber numberWithDouble:8.5] forKey:@"y"];
+        [self.testVariableValues setValue:[NSNumber numberWithDouble:-205] forKey:@"z"];
+    } else if ([sender.currentTitle isEqualToString:@"Test3"]) {
+        [self.testVariableValues setValue:[NSNumber numberWithDouble:19.92] forKey:@"x"];
+        [self.testVariableValues setValue:[NSNumber numberWithDouble:50] forKey:@"y"];
+        [self.testVariableValues setValue:[NSNumber numberWithDouble:9] forKey:@"z"];
+    }
+    
+    NSString *variableDescription = @"";
+    NSSet *variablesUsed;
+    variablesUsed = [CalculatorBrain variablesUsedInProgram:self.brain.program];
+    
+    for (id variable in variablesUsed) {
+        if ([variable isKindOfClass:[NSString class]]) {
+            id value = [self.testVariableValues valueForKey:variable];
+            if ([value isKindOfClass:[NSNumber class]]) {
+                variableDescription = [variableDescription stringByAppendingFormat:@" %@ = %g ", variable, [value doubleValue]];
+            }
+        }
+    }
+    
+    self.display.text = [NSString stringWithFormat:@"%g", [CalculatorBrain runProgram:self.brain.program usingVariableValues:[self.testVariableValues copy]]];
+    
+    self.variable.text = variableDescription;
 }
 
 @end
