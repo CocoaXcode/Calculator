@@ -8,6 +8,8 @@
 
 #import "CalculatorBrain.h"
 
+#define CALCULATORBRAIN_PI 3.14159
+
 @interface CalculatorBrain ()
 
 @property (strong, nonatomic) NSMutableArray *programStack;
@@ -19,6 +21,7 @@
 
 @synthesize programStack = _programStack;
 
+#pragma mark Accessors
 - (NSMutableArray *)programStack
 {
     if (!_programStack) {
@@ -28,6 +31,12 @@
     return _programStack;
 }
 
+- (id)program
+{
+    return [self.programStack copy];
+}
+
+#pragma mark Instance Methods
 - (void)pushOperand:(double)operand
 {
     [self.programStack addObject:[NSNumber numberWithDouble:operand]];
@@ -39,21 +48,67 @@
     return [CalculatorBrain runProgram:self.program];
 }
 
-- (id)program
+- (void)clearStack
 {
-    return [self.programStack copy];
+    [self.programStack removeAllObjects];
 }
 
+- (NSString *)performDescription
+{
+    return [CalculatorBrain descriptionOfProgram:self.program];
+}
+
+#pragma mark Class Methods
 + (BOOL)isOperation:(NSString *)operation
 {
     NSSet *setOfOperations = [NSSet setWithObjects:@"+", @"-", @"*", @"/", @"sin", @"cos", @"sqrt", @"π", @"+/-", nil];
-    
     return [setOfOperations containsObject:operation];
+}
+
++ (BOOL)isFunction:(NSString *)operation
+{
+    NSSet *setOfFunctions = [NSSet setWithObjects:@"sin", @"cos", @"sqrt", nil];
+    return [setOfFunctions containsObject:operation];
+}
+
++ (BOOL)isInfix:(NSString *)operation
+{
+    NSSet *setOfInfixes = [NSSet setWithObjects:@"+", @"-", @"*", @"/", nil];
+    return [setOfInfixes containsObject:operation];
+}
+
++ (BOOL)canSuppressParenthesis:(NSString *)currentOperation 
+         withPreviousOperation:(NSString *)previousOperation
+{
+    //If there is no previous operation or the previous operation is Function
+    //Do suppress parenthesis
+    if (!previousOperation || [self isFunction:previousOperation]) {
+        return YES;
+    }
+    
+    //Do suppress parenthesis reasonably
+    if ([currentOperation isEqualToString:@"+"]
+        || [currentOperation isEqualToString:@"-"]) {
+        
+        if ([previousOperation isEqualToString:@"+"]) {
+            return YES;
+        }
+    } else if ([currentOperation isEqualToString:@"*"]
+               || [currentOperation isEqualToString:@"/"]) {
+        
+        if ([previousOperation isEqualToString:@"+"]
+            || [previousOperation isEqualToString:@"-"]
+            || [previousOperation isEqualToString:@"*"]) {
+            return YES;
+        }
+    }
+
+    return NO;
 }
 
 + (double)popOperandOffStack:(NSMutableArray *)stack
 {
-    double result = 0;
+    double result = 0; //default return value
     
     id topOfStack = [stack lastObject];
     if (topOfStack) {
@@ -61,8 +116,11 @@
     }
     
     if ([topOfStack isKindOfClass:[NSNumber class]]) {
+        //If top of stack is a number, return it directly
         result = [topOfStack doubleValue];
+        
     } else if ([topOfStack isKindOfClass:[NSString class]]) {
+        //If top of stack is a string, do the corresponding operation
         NSString *operation = topOfStack;
         
         if ([operation isEqualToString:@"+"]) {
@@ -87,7 +145,7 @@
                 result = sqrt(radicand);
             }
         } else if ([operation isEqualToString:@"π"]) {
-            result = 3.14159;
+            result = CALCULATORBRAIN_PI;
         } else if ([operation isEqualToString:@"+/-"]) {
             result = -[self popOperandOffStack:stack];
         }
@@ -96,9 +154,52 @@
     return result;
 }
 
-- (void)clearStack
++ (NSString *)descriptionOfTopOfStack:(NSMutableArray *)stack 
+                withPreviousOperation:(NSString *)previousOperation;
 {
-    [self.programStack removeAllObjects];
+    NSString *result = @"0"; //default return value
+    
+    id topOfStack = [stack lastObject];
+    if (topOfStack) {
+        [stack removeLastObject];
+    }
+    
+    if ([topOfStack isKindOfClass:[NSNumber class]]) {
+        //If top of stack is a number, return it directly
+        result = [topOfStack stringValue];
+        
+    } else if ([topOfStack isKindOfClass:[NSString class]]) {
+        //If top of stack is a string, do the corresponding description
+        NSString *operation = topOfStack;
+        
+        if ([self isFunction:topOfStack]) {
+            //The Function is always with parentheses 
+            result = [NSString stringWithFormat:@"%@(%@)", operation, [self descriptionOfTopOfStack:stack withPreviousOperation:operation]];
+        } else if ([self isInfix:topOfStack]) {
+            NSString *latterExpression = [self descriptionOfTopOfStack:stack withPreviousOperation:operation];
+            NSString *formerExpression = [self descriptionOfTopOfStack:stack withPreviousOperation:operation];
+            
+            //The Infix do suppress parenthesis, if necessary
+            if ([self canSuppressParenthesis:operation withPreviousOperation:previousOperation]) {
+                result = [NSString stringWithFormat:@"%@ %@ %@", formerExpression, operation, latterExpression];
+            } else {
+                result = [NSString stringWithFormat:@"(%@ %@ %@)", formerExpression, operation, latterExpression];
+            }
+
+        } else if ([operation isEqualToString:@"+/-"]) {
+            //If there is a previous operation, give the description with parentheses
+            if (previousOperation) {
+                result = [NSString stringWithFormat:@"(-%@)", [self descriptionOfTopOfStack:stack withPreviousOperation:operation]];
+            } else {
+                result = [NSString stringWithFormat:@"-%@", [self descriptionOfTopOfStack:stack withPreviousOperation:operation]];
+            }
+        } else {
+            //If this happens, top of stack must be a variable name, return it directlhy
+            result = topOfStack;
+        }
+    }
+    
+    return result;
 }
 
 + (double)runProgram:(id)program
@@ -167,7 +268,20 @@
 
 + (NSString *)descriptionOfProgram:(id)program
 {
-    return @"TO DO";
+    NSMutableArray *stack;
+    NSString *result;
+    if ([program isKindOfClass:[NSArray class]]) {
+        stack = [program mutableCopy];
+        //Do description
+        result = [self descriptionOfTopOfStack:stack withPreviousOperation:nil];
+        //If stack is not empty after above step
+        //Do description continuously and combine results with comma
+        while ([stack count] > 0) {
+            result = [result stringByAppendingFormat:@", %@", [self descriptionOfTopOfStack:stack withPreviousOperation:nil]];
+        }
+    }
+    
+    return result;
 }
 
 @end

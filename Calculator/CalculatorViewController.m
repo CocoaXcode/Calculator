@@ -22,6 +22,7 @@
 
 @synthesize display = _display;
 @synthesize input = _input;
+@synthesize description = _description;
 @synthesize userIsInTheMiddleOfEnteringANumber = _userIsInTheMiddleOfEnteringANumber;
 @synthesize pointIsInTheMiddleOfANumber = _pointIsInTheMiddleOfANumber;
 @synthesize brain = _brain;
@@ -36,6 +37,7 @@
 {
     [self setDisplay:nil];
     [self setInput:nil];
+    [self setDescription:nil];
     [super viewDidUnload];
     // Release any retained subviews of the main view.
 }
@@ -76,6 +78,7 @@
     self.input.text = [self.input.text stringByReplacingOccurrencesOfString:@"=" withString:@""];
     self.input.text = [self.input.text stringByAppendingFormat:@"%@ =", sender.currentTitle];
     self.display.text = [NSString stringWithFormat:@"%g", result];
+    self.description.text = [self.brain performDescription];
 }
 
 - (IBAction)enterPressed 
@@ -85,6 +88,7 @@
     //so that user can distinguish what is input and what is result
     self.input.text = [self.input.text stringByReplacingOccurrencesOfString:@"=" withString:@""];
     self.input.text = [self.input.text stringByAppendingFormat:@"%@ ", self.display.text];
+    self.description.text = [self.brain performDescription];
     self.userIsInTheMiddleOfEnteringANumber = NO;
     self.pointIsInTheMiddleOfANumber = NO;
 }
@@ -113,6 +117,7 @@
     [self.brain clearStack];
     self.display.text = @"0";
     self.input.text = @"";
+    self.description.text = @"";
     self.userIsInTheMiddleOfEnteringANumber = NO;
     self.pointIsInTheMiddleOfANumber = NO;
 }
@@ -151,6 +156,11 @@
     } else {
         [self operationPressed:sender];
     }
+}
+
+- (IBAction)testPressed:(UIButton *)sender 
+{
+    self.description.text = [self.brain performDescription];
 }
 
 @end
