@@ -74,7 +74,7 @@
     
     if (self.userIsInTheMiddleOfEnteringANumber) {
         self.display.text = [self.display.text stringByAppendingString:digit];
-    } else if (![digit isEqualToString:@"0"]) {
+    } else {
         self.display.text = digit;
         self.userIsInTheMiddleOfEnteringANumber = YES;
     }
@@ -85,8 +85,7 @@
     if (self.userIsInTheMiddleOfEnteringANumber) {
         [self enterPressed];
     }
-    double result = [self.brain performOperation:sender.currentTitle];
-    self.display.text = [NSString stringWithFormat:@"%g", result];
+    self.display.text = [self.brain performOperation:sender.currentTitle];
     self.description.text = [CalculatorBrain descriptionOfProgram:self.brain.program];
 }
 
@@ -105,7 +104,7 @@
     }
     
     //Point pressed while displaying the result
-    //whole display text will be cleared and start off with "0."
+    //whole display text will be cleared and start off with @"0."
     //It is a little tricky, but fully reasonable
     if (self.userIsInTheMiddleOfEnteringANumber) {
         self.display.text = [self.display.text stringByAppendingString:@"."];
@@ -166,7 +165,7 @@
         }
     }
     
-    self.display.text = [NSString stringWithFormat:@"%g", [CalculatorBrain runProgram:self.brain.program usingVariableValues:[self.testVariableValues copy]]];
+    self.display.text = [CalculatorBrain runProgram:self.brain.program usingVariableValues:[self.testVariableValues copy]];
     
     self.variable.text = variableDescription;
 }
@@ -185,13 +184,13 @@
             //Perform substring
             self.display.text = [self.display.text substringToIndex: (lengthOfDisplayText - 1)];
         } else {
-            self.display.text = [NSString stringWithFormat:@"%g", [CalculatorBrain runProgram:self.brain.program usingVariableValues:[self.testVariableValues copy]]];
+            self.display.text = [CalculatorBrain runProgram:self.brain.program usingVariableValues:[self.testVariableValues copy]];
             self.userIsInTheMiddleOfEnteringANumber = NO;
         }
     } else {
         
         [self.brain popTopOfStack];
-        self.display.text = [NSString stringWithFormat:@"%g", [CalculatorBrain runProgram:self.brain.program usingVariableValues:[self.testVariableValues copy]]];
+        self.display.text = [CalculatorBrain runProgram:self.brain.program usingVariableValues:[self.testVariableValues copy]];
         self.description.text = [CalculatorBrain descriptionOfProgram:self.brain.program];
     }
 }

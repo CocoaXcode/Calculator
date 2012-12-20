@@ -42,7 +42,7 @@
     [self.programStack addObject:[NSNumber numberWithDouble:operand]];
 }
 
-- (double)performOperation:(NSString *)operation
+- (NSString *)performOperation:(NSString *)operation
 {
     [self.programStack addObject:operation];
     return [CalculatorBrain runProgram:self.program];
@@ -110,7 +110,8 @@
     return NO;
 }
 
-+ (double)popOperandOffStack:(NSMutableArray *)stack
++ (double)popOperandOffStack:(NSMutableArray *)stack 
+             throwExceptions:(NSMutableArray *)exceptions
 {
     double result = 0; //default return value
     
@@ -128,30 +129,45 @@
         NSString *operation = topOfStack;
         
         if ([operation isEqualToString:@"+"]) {
-            result = [self popOperandOffStack:stack] + [self popOperandOffStack:stack];
+            result = [self popOperandOffStack:stack throwExceptions:exceptions] + [self popOperandOffStack:stack throwExceptions:exceptions];
         } else if ([operation isEqualToString:@"-"]) {
-            double subtrahend = [self popOperandOffStack:stack];
-            result = [self popOperandOffStack:stack] - subtrahend;
+            double subtrahend = [self popOperandOffStack:stack throwExceptions:exceptions];
+            result = [self popOperandOffStack:stack throwExceptions:exceptions] - subtrahend;
         } else if ([operation isEqualToString:@"*"]) {
-            result = [self popOperandOffStack:stack] * [self popOperandOffStack:stack];
+            result = [self popOperandOffStack:stack throwExceptions:exceptions] * [self popOperandOffStack:stack throwExceptions:exceptions];
         } else if ([operation isEqualToString:@"/"]) {
-            double divisor = [self popOperandOffStack:stack];
+            double divisor = [self popOperandOffStack:stack throwExceptions:exceptions];
             if (divisor) {
-                result = [self popOperandOffStack:stack] / divisor;
+                result = [self popOperandOffStack:stack throwExceptions:exceptions] / divisor;
+            } else {
+                [exceptions addObject:@"Divide by Zero!"];
             }
         } else if ([operation isEqualToString:@"sin"]) {
-            result = sin([self popOperandOffStack:stack]);
+            result = sin([self popOperandOffStack:stack throwExceptions:exceptions]);
         } else if ([operation isEqualToString:@"cos"]) {
-            result = cos([self popOperandOffStack:stack]);
+            result = cos([self popOperandOffStack:stack throwExceptions:exceptions]);
         } else if ([operation isEqualToString:@"sqrt"]) {
-            double radicand = [self popOperandOffStack:stack];
+            double radicand = [self popOperandOffStack:stack throwExceptions:exceptions];
             if (radicand >= 0) {
                 result = sqrt(radicand);
+            } else {
+                [exceptions addObject:@"Square root of a negative number!"];
             }
         } else if ([operation isEqualToString:@"π"]) {
             result = CALCULATORBRAIN_PI;
         } else if ([operation isEqualToString:@"+/-"]) {
-            result = -[self popOperandOffStack:stack];
+            result = -[self popOperandOffStack:stack throwExceptions:exceptions];
+        } else {
+            //Comment out this: [exceptions addObject:@"Unknown operations!"];
+            //for the circumstance of variable names here
+        }
+    } else {
+        
+        if (topOfStack) {
+            [exceptions addObject:@"Unknown objects!"];
+        } else {
+            //Comment out this: [exceptions addObject:@"Insufficient operands!"];
+            //Because we now use 0 as the missing operand(s). It works good.
         }
     }
     
@@ -206,16 +222,24 @@
     return result;
 }
 
-+ (double)runProgram:(id)program
++ (NSString *)runProgram:(id)program
 {    
     NSMutableArray *stack;
     if ([program isKindOfClass:[NSArray class]]) {
         stack = [program mutableCopy];
     }
-    return [self popOperandOffStack:stack];
+    
+    NSMutableArray *exceptions = [NSMutableArray array];
+    double result = [self popOperandOffStack:stack throwExceptions:exceptions];
+    //If any excepiton, return error messages of exceptions, otherwise return the result
+    if ([exceptions count] > 0) {
+        return [exceptions componentsJoinedByString:@" "];
+    } else {
+        return [NSString stringWithFormat:@"%g", result];
+    }
 }
 
-+ (double)runProgram:(id)program usingVariableValues:(NSDictionary *)variableValues
++ (NSString *)runProgram:(id)program usingVariableValues:(NSDictionary *)variableValues
 {    
     NSMutableArray *stack;
     if ([program isKindOfClass:[NSArray class]]) {
@@ -240,7 +264,14 @@
         }
     }
     
-    return [self popOperandOffStack:stack];
+    NSMutableArray *exceptions = [NSMutableArray array];
+    double result = [self popOperandOffStack:stack throwExceptions:exceptions];
+    //If any excepiton, return error messages of exceptions, otherwise return the result
+    if ([exceptions count] > 0) {
+        return [exceptions componentsJoinedByString:@" "];
+    } else {
+        return [NSString stringWithFormat:@"%g", result];
+    }
 }
 
 + (NSSet *)variablesUsedInProgram:(id)program
@@ -275,7 +306,8 @@
     NSMutableArray *stack;
     NSString *result;
     if ([program isKindOfClass:[NSArray class]]) {
-        //If no item in stack, return nil
+        //If no item in stack, return nil immediately
+        //otherwise the following steps may return @"0" under this circumstance
         if ([program count] == 0) {
             return nil;
         }
