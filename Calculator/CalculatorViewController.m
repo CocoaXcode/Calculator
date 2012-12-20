@@ -23,7 +23,6 @@
 
 @synthesize display = _display;
 @synthesize description = _description;
-@synthesize variable = _variable;
 @synthesize userIsInTheMiddleOfEnteringANumber = _userIsInTheMiddleOfEnteringANumber;
 @synthesize pointIsInTheMiddleOfANumber = _pointIsInTheMiddleOfANumber;
 @synthesize brain = _brain;
@@ -40,7 +39,6 @@
 {
     [self setDisplay:nil];
     [self setDescription:nil];
-    [self setVariable:nil];
     [super viewDidUnload];
     // Release any retained subviews of the main view.
 }
@@ -121,7 +119,6 @@
     [self.brain clearStack];
     self.display.text = @"0";
     self.description.text = @"";
-    self.variable.text = @"";
     self.userIsInTheMiddleOfEnteringANumber = NO;
     self.pointIsInTheMiddleOfANumber = NO;
     [self.testVariableValues removeAllObjects];
@@ -135,39 +132,6 @@
     } else {
         [self operationPressed:sender];
     }
-}
-
-- (IBAction)testPressed:(UIButton *)sender 
-{
-    [self.testVariableValues removeAllObjects];
-    
-    if ([sender.currentTitle isEqualToString:@"Test1"]) {
-        [self.testVariableValues setValue:[NSNumber numberWithDouble:19] forKey:@"z"];
-    } else if ([sender.currentTitle isEqualToString:@"Test2"]) {
-        [self.testVariableValues setValue:[NSNumber numberWithDouble:8.5] forKey:@"y"];
-        [self.testVariableValues setValue:[NSNumber numberWithDouble:-205] forKey:@"z"];
-    } else if ([sender.currentTitle isEqualToString:@"Test3"]) {
-        [self.testVariableValues setValue:[NSNumber numberWithDouble:19.92] forKey:@"x"];
-        [self.testVariableValues setValue:[NSNumber numberWithDouble:50] forKey:@"y"];
-        [self.testVariableValues setValue:[NSNumber numberWithDouble:9] forKey:@"z"];
-    }
-    
-    NSString *variableDescription = @"";
-    NSSet *variablesUsed;
-    variablesUsed = [CalculatorBrain variablesUsedInProgram:self.brain.program];
-    
-    for (id variable in variablesUsed) {
-        if ([variable isKindOfClass:[NSString class]]) {
-            id value = [self.testVariableValues valueForKey:variable];
-            if ([value isKindOfClass:[NSNumber class]]) {
-                variableDescription = [variableDescription stringByAppendingFormat:@" %@ = %g ", variable, [value doubleValue]];
-            }
-        }
-    }
-    
-    self.display.text = [CalculatorBrain runProgram:self.brain.program usingVariableValues:[self.testVariableValues copy]];
-    
-    self.variable.text = variableDescription;
 }
 
 - (IBAction)undoPressed:(UIButton *)sender 
