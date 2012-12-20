@@ -59,7 +59,7 @@
     
     if (self.userIsInTheMiddleOfEnteringANumber) {
         self.display.text = [self.display.text stringByAppendingString:digit];
-    } else if (![digit isEqualToString:@"0"]) {
+    } else {
         self.display.text = digit;
         self.userIsInTheMiddleOfEnteringANumber = YES;
     }
