@@ -8,7 +8,7 @@
 
 #import "CalculatorBrain.h"
 
-#define CALCULATORBRAIN_PI 3.14159
+#define CALCULATORBRAIN_PI M_PI
 
 @interface CalculatorBrain ()
 
@@ -42,10 +42,9 @@
     [self.programStack addObject:[NSNumber numberWithDouble:operand]];
 }
 
-- (NSString *)performOperation:(NSString *)operation
+- (void)pushOperation:(NSString *)operation
 {
     [self.programStack addObject:operation];
-    return [CalculatorBrain runProgram:self.program];
 }
 
 - (void)clearStack
@@ -222,7 +221,7 @@
     return result;
 }
 
-+ (NSString *)runProgram:(id)program
++ (id)runProgram:(id)program
 {    
     NSMutableArray *stack;
     if ([program isKindOfClass:[NSArray class]]) {
@@ -235,11 +234,11 @@
     if ([exceptions count] > 0) {
         return [exceptions componentsJoinedByString:@" "];
     } else {
-        return [NSString stringWithFormat:@"%g", result];
+        return [NSNumber numberWithDouble:result];
     }
 }
 
-+ (NSString *)runProgram:(id)program usingVariableValues:(NSDictionary *)variableValues
++ (id)runProgram:(id)program usingVariableValues:(NSDictionary *)variableValues
 {    
     NSMutableArray *stack;
     if ([program isKindOfClass:[NSArray class]]) {
@@ -270,7 +269,7 @@
     if ([exceptions count] > 0) {
         return [exceptions componentsJoinedByString:@" "];
     } else {
-        return [NSString stringWithFormat:@"%g", result];
+        return [NSNumber numberWithDouble:result];
     }
 }
 

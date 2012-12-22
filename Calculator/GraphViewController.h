@@ -9,8 +9,16 @@
 #import <UIKit/UIKit.h>
 #import "GraphView.h"
 
+@protocol GraphViewControllerDelegate <NSObject>
+
+- (id)resultOfProgramWithVariableValues:(NSDictionary *)variableValues;
+
+@end
+
+
 @interface GraphViewController : UIViewController
 
-@property (weak, nonatomic) IBOutlet GraphView *graphView;
+@property (weak, nonatomic) id <GraphViewControllerDelegate> delegate;
+@property (strong, nonatomic) NSString *descriptionOfProgram;
 
 @end

@@ -8,13 +8,15 @@
 
 #import "CalculatorViewController.h"
 #import "CalculatorBrain.h"
+#import "GraphViewController.h"
 
-@interface CalculatorViewController ()
+@interface CalculatorViewController () <GraphViewControllerDelegate>
 
+@property (weak, nonatomic) IBOutlet UILabel *display;
+@property (weak, nonatomic) IBOutlet UILabel *description;
 @property (nonatomic) BOOL userIsInTheMiddleOfEnteringANumber;
 @property (nonatomic) BOOL pointIsInTheMiddleOfANumber;
 @property (strong, nonatomic) CalculatorBrain *brain;
-@property (strong, nonatomic) NSMutableDictionary *testVariableValues;
 
 @end
 
@@ -26,7 +28,6 @@
 @synthesize userIsInTheMiddleOfEnteringANumber = _userIsInTheMiddleOfEnteringANumber;
 @synthesize pointIsInTheMiddleOfANumber = _pointIsInTheMiddleOfANumber;
 @synthesize brain = _brain;
-@synthesize testVariableValues = _testVariableValues;
 
 #pragma mark View Related
 - (void)viewDidLoad
@@ -48,6 +49,15 @@
     return (interfaceOrientation == UIInterfaceOrientationPortrait);
 }
 
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
+{
+    if ([segue.identifier isEqualToString:@"ShowGraph"]) {
+        GraphViewController *graphVC = segue.destinationViewController;
+        graphVC.delegate = self;
+        graphVC.descriptionOfProgram = [CalculatorBrain descriptionOfProgram:self.brain.program];
+    }
+}
+
 #pragma mark Accessors
 - (CalculatorBrain *)brain
 {
@@ -55,14 +65,6 @@
         _brain = [[CalculatorBrain alloc] init];
     }
     return _brain;
-}
-
-- (NSMutableDictionary *)testVariableValues
-{
-    if (!_testVariableValues) {
-        _testVariableValues = [[NSMutableDictionary alloc] init];
-    }
-    return _testVariableValues;
 }
 
 #pragma mark Press Action
@@ -83,7 +85,14 @@
     if (self.userIsInTheMiddleOfEnteringANumber) {
         [self enterPressed];
     }
-    self.display.text = [self.brain performOperation:sender.currentTitle];
+    
+    [self.brain pushOperation:sender.currentTitle];
+    id result = [CalculatorBrain runProgram:self.brain.program];
+    if ([result isKindOfClass:[NSNumber class]]) {
+        self.display.text = [result stringValue];
+    } else if ([result isKindOfClass:[NSString class]]) {
+        self.display.text = result;
+    }
     self.description.text = [CalculatorBrain descriptionOfProgram:self.brain.program];
 }
 
@@ -121,7 +130,6 @@
     self.description.text = @"";
     self.userIsInTheMiddleOfEnteringANumber = NO;
     self.pointIsInTheMiddleOfANumber = NO;
-    [self.testVariableValues removeAllObjects];
 }
 
 - (IBAction)changeSignPressed:(UIButton *)sender 
@@ -136,6 +144,7 @@
 
 - (IBAction)undoPressed:(UIButton *)sender 
 {
+    id result;
     if (self.userIsInTheMiddleOfEnteringANumber) {
         NSUInteger lengthOfDisplayText = self.display.text.length;
         if (lengthOfDisplayText > 1) {
@@ -148,15 +157,30 @@
             //Perform substring
             self.display.text = [self.display.text substringToIndex: (lengthOfDisplayText - 1)];
         } else {
-            self.display.text = [CalculatorBrain runProgram:self.brain.program usingVariableValues:[self.testVariableValues copy]];
+            result = [CalculatorBrain runProgram:self.brain.program];
+            if ([result isKindOfClass:[NSNumber class]]) {
+                self.display.text = [result stringValue];
+            } else if ([result isKindOfClass:[NSString class]]) {
+                self.display.text = result;
+            }
             self.userIsInTheMiddleOfEnteringANumber = NO;
         }
     } else {
         
         [self.brain popTopOfStack];
-        self.display.text = [CalculatorBrain runProgram:self.brain.program usingVariableValues:[self.testVariableValues copy]];
+        result = [CalculatorBrain runProgram:self.brain.program];
+        if ([result isKindOfClass:[NSNumber class]]) {
+            self.display.text = [result stringValue];
+        } else if ([result isKindOfClass:[NSString class]]) {
+            self.display.text = result;
+        }
         self.description.text = [CalculatorBrain descriptionOfProgram:self.brain.program];
     }
+}
+
+- (id)resultOfProgramWithVariableValues:(NSDictionary *)variableValues
+{
+    return [CalculatorBrain runProgram:self.brain.program usingVariableValues:variableValues];
 }
 
 @end
