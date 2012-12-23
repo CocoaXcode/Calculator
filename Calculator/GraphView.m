@@ -25,57 +25,61 @@
     return CGPointMake(self.bounds.origin.x + self.bounds.size.width/2, self.bounds.origin.y + self.bounds.size.height/2);
 }
 
-- (void)setup
-{
-    NSNumber *defaultOriginX = [[NSUserDefaults standardUserDefaults] objectForKey:@"GraphViewOriginX"];    
-    NSNumber *defaultOriginY = [[NSUserDefaults standardUserDefaults] objectForKey:@"GraphViewOriginY"];
-    if (defaultOriginX && defaultOriginY) {
-        self.origin = CGPointMake([defaultOriginX floatValue], [defaultOriginY floatValue]);
-    } else {
-        self.origin = CGPointZero;
-    }
-    
-    NSNumber *defaultScale = [[NSUserDefaults standardUserDefaults] objectForKey:@"GraphViewScale"];
-    if (defaultScale) {
-        self.scale = [defaultScale floatValue] > 0? [defaultScale floatValue]: GRAPH_VIEW_DEFAULT_SCALE;
-    } else {
-        self.scale = GRAPH_VIEW_DEFAULT_SCALE;
-    }
-}
-
-- (void)awakeFromNib
-{
-    [self setup];
-}
-
 - (void)setOrigin:(CGPoint)origin
 {
-    _origin = origin;
-    [[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithFloat:origin.x] forKey:@"GraphViewOriginX"];
-    [[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithFloat:origin.y] forKey:@"GraphViewOriginY"];
-    [[NSUserDefaults standardUserDefaults] synchronize];
-    [self setNeedsDisplay];
+    if (!CGPointEqualToPoint(_origin, origin)) {
+        _origin = origin;
+        [self setNeedsDisplay];
+    }
 }
 
 - (void)setScale:(CGFloat)scale
 {
-    _scale = scale;
-    [[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithFloat:scale] forKey:@"GraphViewScale"];
-    [[NSUserDefaults standardUserDefaults] synchronize];
-    [self setNeedsDisplay];
+    if (scale > 0 && _scale != scale) {
+        _scale = scale;
+        [self setNeedsDisplay];
+    }
 }
 
 - (id)initWithFrame:(CGRect)frame
 {
     self = [super initWithFrame:frame];
     if (self) {
-        [self setup];
+        // Custom initialization
     }
     return self;
 }
 
-#define DRAW_GRAPH_MAX_POINTS 4000
+- (void)restoreOriginAndScale
+{
+    NSNumber *defaultOriginX = [[NSUserDefaults standardUserDefaults] objectForKey:@"GraphViewOriginX"];    
+    NSNumber *defaultOriginY = [[NSUserDefaults standardUserDefaults] objectForKey:@"GraphViewOriginY"];
+    NSNumber *defaultScale = [[NSUserDefaults standardUserDefaults] objectForKey:@"GraphViewScale"];
+    
+    if (defaultOriginX && defaultOriginY && defaultScale) {
+        self.origin = CGPointMake([defaultOriginX floatValue], [defaultOriginY floatValue]);
+        self.scale = [defaultScale doubleValue];
+    } else {
+        [self defaultOriginAndScale];
+    }
+}
 
+- (void)preserveOriginAndScale
+{
+    [[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithFloat:self.origin.x] forKey:@"GraphViewOriginX"];
+    [[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithFloat:self.origin.y] forKey:@"GraphViewOriginY"];
+    [[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithFloat:self.scale] forKey:@"GraphViewScale"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+
+#define GRAPH_VIEW_DEFAULT_SCALE 25.0
+- (void)defaultOriginAndScale
+{
+    self.origin = CGPointZero;
+    self.scale = GRAPH_VIEW_DEFAULT_SCALE;
+}
+
+#define DRAW_GRAPH_MAX_POINTS 4000
 - (void)drawGraphInRect:(CGRect)bounds
          originAtPoint:(CGPoint)axisOrigin
                  scale:(CGFloat)pointsPerUnit
@@ -87,22 +91,29 @@
     CGPoint points[DRAW_GRAPH_MAX_POINTS] = {CGPointZero};
     CGPoint currentPoint = CGPointZero;
     size_t count = 0;
-    
-    id valueOfY;
+    CGFloat increment = 1.0 / self.contentScaleFactor;    
+    double valueOfY = 0.0;
+    BOOL valid = NO;
     do {
-        valueOfY = [self.dataSource valueOfYWithX:(currentPoint.x - axisOrigin.x) / pointsPerUnit];
-        if (![valueOfY isKindOfClass:[NSNumber class]]) {
-            currentPoint.x += 1.0;
+        valueOfY = [self.dataSource valueOfYWithX:((currentPoint.x - axisOrigin.x) / pointsPerUnit) isValid:&valid];
+        if (!valid) {
+            if (count > 1) {
+                CGContextAddLines(context, points, count);
+            }
+            
+            currentPoint.x += increment;
+            count = 0;
             continue;
         }
         
-        currentPoint.y = axisOrigin.y - ([valueOfY doubleValue] * pointsPerUnit);
+        currentPoint.y = axisOrigin.y - (valueOfY * pointsPerUnit);
         points[count] = currentPoint;
         
-        currentPoint.x += 1.0;
+        currentPoint.x += increment;
         ++count;
         
     } while (currentPoint.x < bounds.size.width && count < DRAW_GRAPH_MAX_POINTS);
+    
     CGContextAddLines(context, points, count);
     [[UIColor blueColor] setStroke];
     CGContextStrokePath(context);

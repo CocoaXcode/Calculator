@@ -36,7 +36,9 @@
 {
     [super viewDidLoad];
 	// Do any additional setup after loading the view.
-    self.descriptionOnGraph.text = [NSString stringWithFormat:@"y = %@", self.descriptionOfProgram];
+    if (self.descriptionOfProgram) {
+        self.descriptionOnGraph.text = [NSString stringWithFormat:@"y = %@", self.descriptionOfProgram];
+    }
 }
 
 - (void)viewDidUnload
@@ -45,6 +47,16 @@
     [self setDescriptionOnGraph:nil];
     [super viewDidUnload];
     // Release any retained subviews of the main view.
+}
+
+- (void)viewWillAppear:(BOOL)animated
+{
+    [self.graphView restoreOriginAndScale];
+}
+
+- (void)viewWillDisappear:(BOOL)animated
+{
+    [self.graphView preserveOriginAndScale];
 }
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
@@ -88,14 +100,21 @@
 - (IBAction)longPressWithOneTouch:(UILongPressGestureRecognizer *)sender 
 {
     if (sender.state == UIGestureRecognizerStateEnded) {
-        self.graphView.origin = CGPointZero;
-        self.graphView.scale = GRAPH_VIEW_DEFAULT_SCALE;
+        [self.graphView defaultOriginAndScale];
     }
 }
 
-- (id)valueOfYWithX:(double)X
+- (double)valueOfYWithX:(double)valueOfX isValid:(BOOL *)valid 
 {
-    return [self.delegate resultOfProgramWithVariableValues:[NSDictionary dictionaryWithObject:[NSNumber numberWithDouble:X] forKey:@"x"]];
+    id valueOfY = [self.delegate resultOfProgramWithVariableValues:[NSDictionary dictionaryWithObject:[NSNumber numberWithDouble:valueOfX] forKey:@"x"]];
+    
+    if (![valueOfY isKindOfClass:[NSNumber class]]) {
+        *valid = NO;
+        return 0.0;
+    }
+    
+    *valid = YES;
+    return [valueOfY doubleValue];
 }
 
 @end

@@ -10,19 +10,21 @@
 
 @protocol GraphViewDataSource <NSObject>
 
-- (id)valueOfYWithX:(double)X;
+- (double)valueOfYWithX:(double)valueOfX isValid:(BOOL *)valid;
 
 @end
 
 
 @interface GraphView : UIView
 
-#define GRAPH_VIEW_DEFAULT_SCALE 50.0
-
 @property (nonatomic) CGPoint origin;
 @property (nonatomic) CGFloat scale;
 @property (nonatomic, readonly) CGPoint centerOfBounds;
 
 @property (weak, nonatomic) id <GraphViewDataSource> dataSource;
+
+- (void)restoreOriginAndScale;
+- (void)preserveOriginAndScale;
+- (void)defaultOriginAndScale;
 
 @end

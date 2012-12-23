@@ -165,8 +165,7 @@
         if (topOfStack) {
             [exceptions addObject:@"Unknown objects!"];
         } else {
-            //Comment out this: [exceptions addObject:@"Insufficient operands!"];
-            //Because we now use 0 as the missing operand(s). It works good.
+            [exceptions addObject:@"Insufficient operands!"];
         }
     }
     
@@ -198,19 +197,18 @@
             NSString *latterExpression = [self descriptionOfTopOfStack:stack withPreviousOperation:operation];
             NSString *formerExpression = [self descriptionOfTopOfStack:stack withPreviousOperation:operation];
             
-            //The Infix do suppress parenthesis, if necessary
+            //The Infix does suppress parenthesis, if necessary
             if ([self canSuppressParenthesis:operation withPreviousOperation:previousOperation]) {
                 result = [NSString stringWithFormat:@"%@ %@ %@", formerExpression, operation, latterExpression];
             } else {
                 result = [NSString stringWithFormat:@"(%@ %@ %@)", formerExpression, operation, latterExpression];
             }
-
         } else if ([operation isEqualToString:@"+/-"]) {
-            //If there is a previous operation, give the description with parentheses
-            if (previousOperation) {
-                result = [NSString stringWithFormat:@"(-%@)", [self descriptionOfTopOfStack:stack withPreviousOperation:operation]];
-            } else {
+            //The "+/-" does suppress parenthesis, if necessary
+            if ([self canSuppressParenthesis:operation withPreviousOperation:previousOperation]) {
                 result = [NSString stringWithFormat:@"-%@", [self descriptionOfTopOfStack:stack withPreviousOperation:operation]];
+            } else {
+                result = [NSString stringWithFormat:@"(-%@)", [self descriptionOfTopOfStack:stack withPreviousOperation:operation]];
             }
         } else {
             //If this happens, top of stack must be a variable name, return it directlhy
