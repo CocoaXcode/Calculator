@@ -10,4 +10,7 @@
 
 @interface CalculatorViewController : UIViewController
 
+@property (nonatomic, weak) IBOutlet UILabel *display;
+@property (nonatomic, weak) IBOutlet UILabel *description;
+
 @end

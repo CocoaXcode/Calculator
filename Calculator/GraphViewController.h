@@ -11,14 +11,17 @@
 
 @protocol GraphViewControllerDelegate <NSObject>
 
-- (id)resultOfProgramWithVariableValues:(NSDictionary *)variableValues;
+- (id)runProgram:(id)program usingVariableValues:(NSDictionary *)variableValues;
+- (NSString *)descriptionOfProgram:(id)program;
 
 @end
 
 
 @interface GraphViewController : UIViewController
 
-@property (weak, nonatomic) id <GraphViewControllerDelegate> delegate;
-@property (strong, nonatomic) NSString *descriptionOfProgram;
+@property (nonatomic, weak) IBOutlet GraphView *graphView;
+@property (nonatomic, weak) IBOutlet UILabel *descriptionOnGraph;
+@property (nonatomic, weak) id <GraphViewControllerDelegate> delegate;
+@property (nonatomic, strong) id program;
 
 @end

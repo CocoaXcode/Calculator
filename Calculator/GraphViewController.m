@@ -10,9 +10,6 @@
 
 @interface GraphViewController () <GraphViewDataSource>
 
-@property (weak, nonatomic) IBOutlet GraphView *graphView;
-@property (weak, nonatomic) IBOutlet UILabel *descriptionOnGraph;
-
 @end
 
 
@@ -21,7 +18,7 @@
 @synthesize graphView = _graphView;
 @synthesize descriptionOnGraph = _descriptionOnGraph;
 @synthesize delegate = _delegate;
-@synthesize descriptionOfProgram = _descriptionOfProgram;
+@synthesize program = _program;
 
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
 {
@@ -36,8 +33,11 @@
 {
     [super viewDidLoad];
 	// Do any additional setup after loading the view.
-    if (self.descriptionOfProgram) {
-        self.descriptionOnGraph.text = [NSString stringWithFormat:@"y = %@", self.descriptionOfProgram];
+    NSString *descriptionOfProgram = [self.delegate descriptionOfProgram:self.program];
+    if (descriptionOfProgram) {
+        self.descriptionOnGraph.text = [NSString stringWithFormat:@"y = %@", descriptionOfProgram];
+    } else {
+        self.descriptionOnGraph.text = nil;
     }
 }
 
@@ -61,13 +61,27 @@
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
 {
-    return YES; //(interfaceOrientation == UIInterfaceOrientationPortrait);
+    return YES; //return (interfaceOrientation == UIInterfaceOrientationPortrait);
 }
 
 - (void)setGraphView:(GraphView *)graphView
 {
     _graphView = graphView;
     self.graphView.dataSource = self;
+}
+
+- (void)setProgram:(NSArray *)program
+{
+    _program = program;
+    
+    NSString *descriptionOfProgram = [self.delegate descriptionOfProgram:self.program];
+    if (descriptionOfProgram) {
+        self.descriptionOnGraph.text = [NSString stringWithFormat:@"y = %@", descriptionOfProgram];
+    } else {
+        self.descriptionOnGraph.text = nil;
+    }
+    
+    [self.graphView setNeedsDisplay];
 }
 
 - (IBAction)pinch:(UIPinchGestureRecognizer *)sender 
@@ -106,7 +120,7 @@
 
 - (double)valueOfYWithX:(double)valueOfX isValid:(BOOL *)valid 
 {
-    id valueOfY = [self.delegate resultOfProgramWithVariableValues:[NSDictionary dictionaryWithObject:[NSNumber numberWithDouble:valueOfX] forKey:@"x"]];
+    id valueOfY = [self.delegate runProgram:self.program usingVariableValues:[NSDictionary dictionaryWithObject:[NSNumber numberWithDouble:valueOfX] forKey:@"x"]];
     
     if (![valueOfY isKindOfClass:[NSNumber class]]) {
         *valid = NO;

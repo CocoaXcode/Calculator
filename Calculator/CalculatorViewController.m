@@ -12,11 +12,9 @@
 
 @interface CalculatorViewController () <GraphViewControllerDelegate>
 
-@property (weak, nonatomic) IBOutlet UILabel *display;
-@property (weak, nonatomic) IBOutlet UILabel *description;
 @property (nonatomic) BOOL userIsInTheMiddleOfEnteringANumber;
 @property (nonatomic) BOOL pointIsInTheMiddleOfANumber;
-@property (strong, nonatomic) CalculatorBrain *brain;
+@property (nonatomic, strong) CalculatorBrain *brain;
 
 @end
 
@@ -46,7 +44,11 @@
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
 {
-    return (interfaceOrientation == UIInterfaceOrientationPortrait);
+    if (self.splitViewController) {
+        return YES;
+    } else {
+        return (interfaceOrientation == UIInterfaceOrientationPortrait);
+    }
 }
 
 - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
@@ -54,7 +56,7 @@
     if ([segue.identifier isEqualToString:@"ShowGraph"]) {
         GraphViewController *graphVC = segue.destinationViewController;
         graphVC.delegate = self;
-        graphVC.descriptionOfProgram = [CalculatorBrain descriptionOfProgram:self.brain.program];
+        graphVC.program = self.brain.program;
     }
 }
 
@@ -178,9 +180,23 @@
     }
 }
 
-- (id)resultOfProgramWithVariableValues:(NSDictionary *)variableValues
+- (IBAction)graphPressed:(UIButton *)sender 
 {
-    return [CalculatorBrain runProgram:self.brain.program usingVariableValues:variableValues];
+    if (self.splitViewController) {
+        GraphViewController *graphVC = [self.splitViewController.viewControllers lastObject];
+        graphVC.delegate = self;
+        graphVC.program = self.brain.program;
+    }
+}
+
+- (id)runProgram:(id)program usingVariableValues:(NSDictionary *)variableValues
+{
+    return [CalculatorBrain runProgram:program usingVariableValues:variableValues];
+}
+
+- (NSString *)descriptionOfProgram:(id)program
+{
+    return [CalculatorBrain descriptionOfProgram:program];
 }
 
 @end
