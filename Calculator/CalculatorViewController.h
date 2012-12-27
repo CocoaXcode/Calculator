@@ -8,9 +8,9 @@
 
 #import <UIKit/UIKit.h>
 
-@interface CalculatorViewController : UIViewController
+@interface CalculatorViewController : UIViewController <UISplitViewControllerDelegate>
 
-@property (nonatomic, weak) IBOutlet UILabel *display;
-@property (nonatomic, weak) IBOutlet UILabel *description;
+@property (weak, nonatomic) IBOutlet UILabel *display;
+@property (weak, nonatomic) IBOutlet UILabel *description;
 
 @end

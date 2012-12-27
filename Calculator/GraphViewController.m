@@ -16,6 +16,9 @@
 @implementation GraphViewController
 
 @synthesize graphView = _graphView;
+@synthesize toolbar = _toolbar;
+@synthesize splitViewBarButtonItem = _splitViewBarButtonItem;
+@synthesize descriptionOnToolbar = _descriptionOnToolbar;
 @synthesize descriptionOnGraph = _descriptionOnGraph;
 @synthesize delegate = _delegate;
 @synthesize program = _program;
@@ -44,6 +47,9 @@
 - (void)viewDidUnload
 {
     [self setGraphView:nil];
+    [self setToolbar:nil];
+    [self setSplitViewBarButtonItem:nil];
+    [self setDescriptionOnToolbar:nil];
     [self setDescriptionOnGraph:nil];
     [super viewDidUnload];
     // Release any retained subviews of the main view.
@@ -76,12 +82,25 @@
     
     NSString *descriptionOfProgram = [self.delegate descriptionOfProgram:self.program];
     if (descriptionOfProgram) {
-        self.descriptionOnGraph.text = [NSString stringWithFormat:@"y = %@", descriptionOfProgram];
+        self.descriptionOnToolbar.title = [NSString stringWithFormat:@"y = %@", descriptionOfProgram];
     } else {
-        self.descriptionOnGraph.text = nil;
+        self.descriptionOnToolbar.title = @"Graph";
     }
     
     [self.graphView setNeedsDisplay];
+}
+
+- (void)setSplitViewBarButtonItem:(UIBarButtonItem *)splitViewBarButtonItem
+{
+    NSMutableArray *toolbarItems = [self.toolbar.items mutableCopy];
+    if (_splitViewBarButtonItem) {
+        [toolbarItems removeObject:_splitViewBarButtonItem];
+    }
+    if (splitViewBarButtonItem) {
+        [toolbarItems insertObject:splitViewBarButtonItem atIndex:0];
+    }
+    [self.toolbar setItems:[toolbarItems copy] animated:YES];
+    _splitViewBarButtonItem = splitViewBarButtonItem;
 }
 
 - (IBAction)pinch:(UIPinchGestureRecognizer *)sender 

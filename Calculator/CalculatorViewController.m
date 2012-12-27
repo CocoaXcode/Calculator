@@ -14,7 +14,7 @@
 
 @property (nonatomic) BOOL userIsInTheMiddleOfEnteringANumber;
 @property (nonatomic) BOOL pointIsInTheMiddleOfANumber;
-@property (nonatomic, strong) CalculatorBrain *brain;
+@property (strong, nonatomic) CalculatorBrain *brain;
 
 @end
 
@@ -32,6 +32,7 @@
 {
     [super viewDidLoad];
 	// Do any additional setup after loading the view, typically from a nib.
+    self.splitViewController.delegate = self;
 }
 
 - (void)viewDidUnload
@@ -129,7 +130,7 @@
 {
     [self.brain clearStack];
     self.display.text = @"0";
-    self.description.text = @"";
+    self.description.text = @"Please enter your formula.";
     self.userIsInTheMiddleOfEnteringANumber = NO;
     self.pointIsInTheMiddleOfANumber = NO;
 }
@@ -197,6 +198,31 @@
 - (NSString *)descriptionOfProgram:(id)program
 {
     return [CalculatorBrain descriptionOfProgram:program];
+}
+
+- (BOOL)splitViewController:(UISplitViewController *)svc 
+   shouldHideViewController:(UIViewController *)vc 
+              inOrientation:(UIInterfaceOrientation)orientation
+{
+    return (UIInterfaceOrientationIsPortrait(orientation));
+}
+
+- (void)splitViewController:(UISplitViewController *)svc 
+     willHideViewController:(UIViewController *)aViewController 
+          withBarButtonItem:(UIBarButtonItem *)barButtonItem 
+       forPopoverController:(UIPopoverController *)pc
+{
+    GraphViewController *graphVC = [svc.viewControllers lastObject];
+    barButtonItem.title = self.navigationItem.title;
+    graphVC.splitViewBarButtonItem = barButtonItem;
+}
+
+- (void)splitViewController:(UISplitViewController *)svc 
+     willShowViewController:(UIViewController *)aViewController 
+  invalidatingBarButtonItem:(UIBarButtonItem *)barButtonItem
+{
+    GraphViewController *graphVC = [svc.viewControllers lastObject];
+    graphVC.splitViewBarButtonItem = nil;
 }
 
 @end

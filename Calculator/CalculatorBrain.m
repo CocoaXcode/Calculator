@@ -12,7 +12,7 @@
 
 @interface CalculatorBrain ()
 
-@property (nonatomic, strong) NSMutableArray *programStack;
+@property (strong, nonatomic) NSMutableArray *programStack;
 
 @end
 
